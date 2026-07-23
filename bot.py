@@ -686,62 +686,68 @@ class GiveawayModal(discord.ui.Modal, title="Lancer un Giveaway 🎁"):
     winners_count = discord.ui.TextInput(label="Nombre de gagnants", default="1", style=discord.TextStyle.short, required=True)
     duration = discord.ui.TextInput(label="Durée (s/m/h/d)", placeholder="Ex: 10m (10 min), 2h (2 heures), 1d (1 jour)", style=discord.TextStyle.short, required=True)
 
-    async def on_submit(self, interaction: discord.Interaction):
-        # Conversion du temps
-        time_str = self.duration.value.lower()
-        time_dict = {"s": 1, "m": 60, "h": 3600, "d": 86400}
-        unit = time_str[-1]
+   async def on_submit(self, interaction: discord.Interaction):
+        # 1. Confirmer l'envoi du formulaire
+        await interaction.response.send_message("🎉 Préparation du giveaway en cours...", ephemeral=True)
         
-        if unit not in time_dict or not time_str[:-1].isdigit():
-            await interaction.response.send_message("❌ Format de temps invalide. Utilise `s`, `m`, `h` ou `d` (Ex: 10m).", ephemeral=True)
+        # 2. Conversion de la durée en secondes
+        duration_str = self.duration.value.lower()
+        seconds = 0
+        if "s" in duration_str: seconds = int(duration_str.replace("s", ""))
+        elif "m" in duration_str: seconds = int(duration_str.replace("m", "")) * 60
+        elif "h" in duration_str: seconds = int(duration_str.replace("h", "")) * 3600
+        elif "d" in duration_str: seconds = int(duration_str.replace("d", "")) * 86400
+        else: 
+            await interaction.followup.send("❌ Format de durée invalide. Utilise s, m, h ou d.", ephemeral=True)
             return
-            
-        seconds = int(time_str[:-1]) * time_dict[unit]
+
         end_time = discord.utils.utcnow() + datetime.timedelta(seconds=seconds)
         
-        # Création de l'embed
+        # 3. Création de l'annonce du Giveaway
         embed = discord.Embed(
-            title="🎉 **NOUVEAU GIVEAWAY** 🎉",
-            description=f"**Lot :** {self.prize.value}\n**Gagnant(s) :** {self.winners_count.value}\n**Fin :** <t:{int(end_time.timestamp())}:R>\n**Lancé par :** {interaction.user.mention}",
-            color=discord.Color.from_rgb(255, 110, 199)
+            title=f"🎁 GIVEAWAY : {self.prize.value}",
+            description=f"Clique sur le bouton ci-dessous pour participer !\n\n🏆 **Gagnant(s) :** {self.winners_count.value}\n⏳ **Fin :** <t:{int(end_time.timestamp())}:R>",
+            color=discord.Color.gold()
         )
-        embed.set_footer(text="Clique sur le bouton ci-dessous pour participer !")
         
         view = GiveawayView()
-        await interaction.response.send_message("✅ Giveaway lancé avec succès !", ephemeral=True)
         msg = await interaction.channel.send(embed=embed, view=view)
-        
-        # Attente de la fin du giveaway
+
+        # 4. Attente de la fin du compte à rebours
         await asyncio.sleep(seconds)
         
-        # Fin du Giveaway
+        # 5. Tirage au sort
         if len(view.participants) == 0:
-            await msg.reply(f"😢 Le giveaway pour **{self.prize.value}** est terminé, mais personne n'a participé...")
-        else:
-            try:
-                nb_gagnants = int(self.winners_count.value)
-            except:
-                nb_gagnants = 1
-                
-            nb_gagnants = min(nb_gagnants, len(view.participants))
-            gagnants_ids = random.sample(list(view.participants), nb_gagnants)
-            gagnants_mentions = ", ".join([f"<@{uid}>" for uid in gagnants_ids])
+            await msg.reply(f"😢 Personne n'a participé au giveaway pour **{self.prize.value}**...")
+            return
             
-            win_embed = discord.Embed(
-                title="🎊 **GIVEAWAY TERMINÉ** 🎊",
-                description=f"**Lot remporté :** {self.prize.value}\n**Gagnant(s) :** {gagnants_mentions}",
-                color=discord.Color.gold()
-            )
-            await msg.reply(content=f"Félicitations {gagnants_mentions} !", embed=win_embed)
-            
-        # Désactiver le bouton à la fin
-        for child in view.children:
-            child.disabled = True
-        await msg.edit(view=view)
+        winners_count = min(int(self.winners_count.value), len(view.participants))
+        winners_ids = random.sample(list(view.participants), winners_count)
+        winners_mentions = ", ".join([f"<@{w}>" for w in winners_ids])
+        
+        win_embed = discord.Embed(
+            title="🎉 GIVEAWAY TERMINÉ 🎉",
+            description=f"🎁 **Lot :** {self.prize.value}\n🏆 **Gagnant(s) :** {winners_mentions}",
+            color=discord.Color.green()
+        )
+        await msg.reply(content=f"Félicitations {winners_mentions} ! Tu remportes **{self.prize.value}** !", embed=win_embed)
 
-@bot.command(name="giveaway", aliases=["gw"])
+# --- Vue intermédiaire pour lancer le Modal ---
+class LaunchGiveawayView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+    
+    @discord.ui.button(label="Configurer un Giveaway 🎁", style=discord.ButtonStyle.blurple)
+    async def launch(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Accès refusé.", ephemeral=True)
+            return
+        await interaction.response.send_modal(GiveawayModal())
+
+@bot.command(name="giveaway")
 @commands.has_permissions(administrator=True)
 async def giveaway_cmd(ctx):
+    await ctx.send("Clique sur le bouton pour paramétrer le giveaway :", view=LaunchGiveawayView())
     # Envoie un bouton pour ouvrir le formulaire (car on ne peut ouvrir un Modal qu'avec une interaction)
     class LaunchView(discord.ui.View):
         @discord.ui.button(label="Configurer le Giveaway 🎁", style=discord.ButtonStyle.blurple)
