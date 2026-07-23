@@ -9,8 +9,7 @@ app = Flask("")
 
 @app.route("/")
 def home():
-  je suis_en_ligne = "Le bot est bien en ligne !"
-  return je suis_en_ligne
+  return "Le bot est bien en ligne !"
 
 
 def run():
