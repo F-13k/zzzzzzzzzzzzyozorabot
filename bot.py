@@ -66,7 +66,7 @@ temp_voice_channels = {}
 # --- 📌 IDs DE CONFIGURATION ---
 # ==========================================
 # --- Boosts ---
-LOG_BOOST_ID = 1529651353679433728
+LOG_BOOST_ID = 1529971011842215937
 ROLE_BOOST_ID = 1529658219054760046
 
 # --- XP & Général ---
