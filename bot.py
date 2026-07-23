@@ -851,15 +851,15 @@ async def poll(ctx, *, question):
     await msg.add_reaction("👎")
 
 # ==========================================
-# --- 🚀 LANCEMENT DU MEGA BOT ---
+# --- 🚀 LANCEMENT DU BOT (VITAL POUR RENDER) ---
 # ==========================================
-keep_alive()
 
-# Insère ici le token principal de ton bot
-# ==========================================
-# --- 🚀 LANCEMENT DU MEGA BOT ---
-# ==========================================
-keep_alive()
+keep_alive() # Lance le faux serveur web pour que Render ne coupe pas le bot
 
+# On récupère le token secret configuré dans l'onglet Environment de Render
 TOKEN = os.getenv("DISCORD_TOKEN")
-bot.run(TOKEN)
+
+if TOKEN is None:
+    print("❌ ERREUR FATALE : Le token Discord est introuvable. As-tu bien configuré DISCORD_TOKEN sur Render ?")
+else:
+    bot.run(TOKEN)
