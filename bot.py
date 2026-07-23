@@ -850,4 +850,10 @@ async def poll(ctx, *, question):
 keep_alive()
 
 # Insère ici le token principal de ton bot
-bot.run("DISCORD_TOKEN")
+# ==========================================
+# --- 🚀 LANCEMENT DU MEGA BOT ---
+# ==========================================
+keep_alive()
+
+TOKEN = os.getenv("DISCORD_TOKEN")
+bot.run(TOKEN)
