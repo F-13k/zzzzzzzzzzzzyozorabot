@@ -686,7 +686,9 @@ class GiveawayModal(discord.ui.Modal, title="Lancer un Giveaway 🎁"):
     winners_count = discord.ui.TextInput(label="Nombre de gagnants", default="1", style=discord.TextStyle.short, required=True)
     duration = discord.ui.TextInput(label="Durée (s/m/h/d)", placeholder="Ex: 10m (10 min), 2h (2 heures), 1d (1 jour)", style=discord.TextStyle.short, required=True)
 
-   async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction: discord.Interaction):
+        # Ajoutez le reste de votre logique ici
+        pass
         # 1. Confirmer l'envoi du formulaire
         await interaction.response.send_message("🎉 Préparation du giveaway en cours...", ephemeral=True)
         
