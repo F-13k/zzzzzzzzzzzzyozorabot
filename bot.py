@@ -651,6 +651,8 @@ async def createreglement(ctx):
         "**🔨 Section 4 : Modération et Sanctions**\n"
         "• **Décision des modérateurs :** L'équipe de Yozora est là pour veiller au bon fonctionnement du serveur. Leurs décisions sont finales.\n"
         "• **Sanctions progressives :** En cas de non-respect, vous risquez : Avertissement ➔ Mute temporaire ➔ Kick ou Ban définitif.\n\n"
+        "**🤍 Section 5 : Soutenir Yozora**\n"
+        "• Montrez votre soutien en portant fièrement notre tag de clan ! Cliquez sur le bouton « Utiliser le Tag » pour l'obtenir.\n\n"
         "*👉 En cliquant sur le bouton d'acceptation ci-dessous, vous certifiez avoir lu, compris et accepté de respecter l'intégralité de ce règlement sur Yozora.*"
     )
 
