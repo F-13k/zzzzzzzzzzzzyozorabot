@@ -122,6 +122,7 @@ class VoicePanelView(discord.ui.View):
 
 
 # 2. Vues pour le Règlement
+# 2. Vues pour le Règlement
 class ReglementView(View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -135,6 +136,19 @@ class ReglementView(View):
             await interaction.response.send_message("Merci ! Tu as accès au serveur.", ephemeral=True)
         else:
             await interaction.response.send_message("Erreur : Le rôle est introuvable sur le serveur.", ephemeral=True)
+
+    @discord.ui.button(label="Utiliser le Tag 🤍", style=discord.ButtonStyle.blurple, custom_id="use_tag_rules")
+    async def tag_callback(self, interaction: discord.Interaction, button: Button):
+        # --- À CONFIGURER ---
+        # ID du rôle donné à ceux qui portent le tag
+        tag_role_id = 1234567890123456789 # <-- REMPLACE PAR L'ID DU RÔLE TAG
+        
+        role = interaction.guild.get_role(tag_role_id)
+        if role:
+            await interaction.user.add_roles(role)
+            await interaction.response.send_message("Merci de soutenir Yozora en portant notre tag ! 💖", ephemeral=True)
+        else:
+            await interaction.response.send_message("Merci pour ton soutien ! (Erreur : rôle introuvable)", ephemeral=True)
 
 
 # 3. Vues pour les Tickets
