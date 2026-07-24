@@ -1,17 +1,14 @@
 import os
+import json
+import asyncio
+import random
+import datetime
+import re
 import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View, Select
 from flask import Flask
 from threading import Thread
-import re
-import json
-import os
-import asyncio
-import random
-import asyncio
-import random
-import datetime
 
 # ==========================================
 # --- 💾 SYSTÈME DE SAUVEGARDE (JSON) ---
@@ -59,8 +56,6 @@ intents.guilds = True
 intents.moderation = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-temp_voice_channels = {}
 
 # ==========================================
 # --- 📌 IDs DE CONFIGURATION ---
@@ -351,7 +346,6 @@ async def on_member_update(before, after):
             embed.set_thumbnail(url=after.display_avatar.url)
             await channel.send(content=after.mention, embed=embed)
 
-# --- Join/Leave & Logs ---
 # --- Rôle Automatique & Join/Leave & Logs ---
 AUTO_ROLE_ID = 1529660423379484793
 
@@ -623,6 +617,7 @@ async def setup_recrutement(ctx):
     embed = discord.Embed(title="🌸 Recrutements Ouverts !", description="👉 Clique sur le bouton pour remplir le formulaire !", color=discord.Color.pink())
     await ctx.send(embed=embed, view=CandidatureView())
     await ctx.message.delete()
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def createreglement(ctx):
@@ -650,9 +645,6 @@ async def createreglement(ctx):
         description=reglement_texte, 
         color=discord.Color.pink()
     )
-    
-    # Tu peux aussi ajouter une image/bannière en bas du règlement si tu le souhaites :
-    # embed.set_image(url="LIEN_DE_TON_IMAGE_ICI")
 
     await ctx.send(embed=embed, view=ReglementView())
     await ctx.message.delete()
@@ -686,20 +678,27 @@ class GiveawayView(discord.ui.View):
 class GiveawayModal(discord.ui.Modal, title="Lancer un Giveaway 🎁"):
     prize = discord.ui.TextInput(label="Lot à gagner", placeholder="Ex: Nitro, Grade VIP...", style=discord.TextStyle.short, required=True)
     winners_count = discord.ui.TextInput(label="Nombre de gagnants", default="1", style=discord.TextStyle.short, required=True)
-    duration = discord.ui.TextInput(label="Durée (s/m/h/d)", placeholder="Ex: 10m (10 min), 2h (2 heures), 1d (1 jour)", style=discord.TextStyle.short, required=True)
+    duration = discord.ui.TextInput(label="Durée (s/m/h/d/y)", placeholder="Ex: 10m, 2h, 1d, 1y", style=discord.TextStyle.short, required=True)
 
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         
-        # 1. Analyse de la durée
-        dur_str = self.duration.value.strip()
-        match = re.match(r'^(\d+)([smhd])$', dur_str)
+        # 1. Analyse de la durée (supporte s, m, h, d, y)
+        dur_str = self.duration.value.strip().lower()
+        match = re.match(r'^(\d+)([smhdy])$', dur_str)
         if not match:
-            await interaction.followup.send("❌ Format de durée invalide. Utilise s, m, h ou d (ex: 10m, 2h, 1d).", ephemeral=True)
+            await interaction.followup.send("❌ Format de durée invalide. Utilise s, m, h, d ou y (ex: 10m, 2h, 1d, 1y).", ephemeral=True)
             return
         
         amount, unit = int(match.group(1)), match.group(2)
-        seconds = amount * {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}[unit]
+        multipliers = {
+            's': 1,
+            'm': 60,
+            'h': 3600,
+            'd': 86400,
+            'y': 31536000 # 365 jours
+        }
+        seconds = amount * multipliers[unit]
         
         # 2. Vérification du nombre de gagnants
         try:
@@ -731,7 +730,7 @@ class GiveawayModal(discord.ui.Modal, title="Lancer un Giveaway 🎁"):
             
             if not view.participants:
                 try:
-                    await msg.edit(content="❌ **Giveaway annulé :** Aucun participant enregisté.", embed=None, view=None)
+                    await msg.edit(content="❌ **Giveaway annulé :** Aucun participant enregistré.", embed=None, view=None)
                 except:
                     pass
                 return
@@ -772,9 +771,6 @@ async def setup_giveaway(ctx):
     await ctx.send(embed=embed, view=StartGiveawayView())
     await ctx.message.delete()
 
-# N'oublie pas d'ajouter ceci dans ton événement on_ready() :
-# bot.add_view(StartGiveawayView())
-# bot.add_view(GiveawayView())
 
 # ==========================================
 # --- 🧰 COMMANDES UTILITAIRES ---
@@ -830,8 +826,7 @@ async def userinfo(ctx, member: discord.Member = None):
     embed.add_field(name=f"🎭 Rôles ({len(roles)})", value=roles_str, inline=False)
     await ctx.send(embed=embed)
 
-# 5. Afficher l'avatar d'un utilisateur (Corrigé)
-# 5. Afficher l'avatar d'un utilisateur (Corrigé)
+# 5. Afficher l'avatar d'un utilisateur
 @bot.command(name="avatar", aliases=["av"])
 async def avatar(ctx, member: discord.Member = None):
     member = member or ctx.author
